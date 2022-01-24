@@ -126,6 +126,7 @@ namespace Spine {
 			var drawOrderItems = skeleton.DrawOrder.Items;
 			float skeletonR = skeleton.R, skeletonG = skeleton.G, skeletonB = skeleton.B, skeletonA = skeleton.A;
 			Color color = new Color();
+            premultipliedAlpha |= drawOrderItems.Any(x => x.Data.BlendMode != BlendMode.Normal);
 
 			if (VertexEffect != null) VertexEffect.Begin(skeleton);
 
@@ -172,16 +173,34 @@ namespace Spine {
 					continue;
 				}
 
-				// set blend state
-				BlendState blend = slot.Data.BlendMode == BlendMode.Additive ? BlendState.Additive : defaultBlendState;
-				if (device.BlendState != blend) {
-					//End();
-					//device.BlendState = blend;
-				}
+				// set blend state according to the slot we are drawing
+                BlendState blendState = defaultBlendState;
+                switch (slot.Data.BlendMode)
+                {
+                    case BlendMode.Additive:
+                        blendState = additiveBlend;
+                        break;
+                    case BlendMode.Multiply:
+                        blendState = multiplyBlend;
+                        break;
+                    case BlendMode.Screen:
+                        blendState = screenBlend;
+                        break;
+                    default:
+                    case BlendMode.Normal:
+                        blendState = premultipliedAlpha ? BlendState.AlphaBlend : BlendState.NonPremultiplied;
+                        break;
+                }
+                
+                if (device.BlendState != blendState)
+                {
+                    End();
+                    device.BlendState = blendState;
+                }
 
 				// calculate color
 				float a = skeletonA * slot.A * attachmentColorA;
-				if (premultipliedAlpha) {
+				if (premultipliedAlpha || blendState == additiveBlend || blendState == screenBlend || blendState == multiplyBlend) {
 					color = new Color(
 							skeletonR * slot.R * attachmentColorR * a,
 							skeletonG * slot.G * attachmentColorG * a,
@@ -195,7 +214,7 @@ namespace Spine {
 
 				Color darkColor = new Color();
 				if (slot.HasSecondColor) {
-					if (premultipliedAlpha) {
+					if (premultipliedAlpha || blendState == additiveBlend || blendState == screenBlend || blendState == multiplyBlend) {
 						darkColor = new Color(slot.R2 * a, slot.G2 * a, slot.B2 * a);
 					} else {
 						darkColor = new Color(slot.R2 * a, slot.G2 * a, slot.B2 * a);
@@ -243,6 +262,7 @@ namespace Spine {
 			}
 			clipper.ClipEnd();
 			if (VertexEffect != null) VertexEffect.End();
+			premultipliedAlpha |= false;
 		}
 	}
 }
