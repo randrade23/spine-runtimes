@@ -47,7 +47,29 @@ namespace Spine {
 		RasterizerState rasterizerState;
 		float[] vertices = new float[8];
 		int[] quadTriangles = { 0, 1, 2, 2, 3, 0 };
+		
 		BlendState defaultBlendState;
+        BlendState additiveBlend = BlendState.Additive;
+        BlendState multiplyBlend = new BlendState()
+        {
+            AlphaBlendFunction = BlendFunction.ReverseSubtract,
+            AlphaSourceBlend = Blend.One,
+            AlphaDestinationBlend = Blend.One,
+
+            ColorBlendFunction = BlendFunction.Add,
+            ColorSourceBlend = Blend.DestinationColor,
+            ColorDestinationBlend = Blend.InverseSourceAlpha,
+        };
+        BlendState screenBlend = new BlendState()
+        {
+            AlphaBlendFunction = BlendFunction.Add,
+            AlphaSourceBlend = Blend.SourceAlpha,
+            AlphaDestinationBlend = Blend.One,
+
+            ColorBlendFunction = BlendFunction.Add,
+            ColorSourceBlend = Blend.One,
+            ColorDestinationBlend = Blend.InverseSourceColor,
+        };
 
 		Effect effect;
 		public Effect Effect { get { return effect; } set { effect = value; } }
